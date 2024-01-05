@@ -1,0 +1,142 @@
+import { Injectable, OnApplicationBootstrap } from '@nestjs/common';
+import { UserRepository } from '@/database/repositories';
+import { CrossExArbiRepository } from '@/database/repositories/cross-ex-arbi.repository';
+
+@Injectable()
+export class ArbitrageDemoService implements OnApplicationBootstrap {
+  constructor(
+    private readonly crossExArbiRepository: CrossExArbiRepository,
+  ) {
+    // this.run();
+  }
+
+  async onApplicationBootstrap() {
+    // this.run();
+  }
+
+  private _price = new Map<string, {
+    thresh: { amount_bid: number, price_bid: number, amount_ask: number, price_ask: number, updated_at: Date },
+    top_ask: { amount: number; price: number }[],
+    top_bid: { amount: number; price: number }[],
+  }>();
+
+  async adaptTrading(data: any) {
+    this._price.set(data.exchange, data);
+    await this.snipe(data.symbol);
+  }
+
+
+  async calculatePNL(
+    data: {
+      _asks: { amount: number, price: number }[],
+      _bids: { amount: number, price: number }[],
+      from: string,
+      to: string,
+      rate: number,
+      symbol: string,
+    }
+  ) {
+    let { _asks, _bids } = data;
+    _asks = _asks.sort((a, b) => a.price - b.price);
+    _bids = _bids.sort((a, b) => b.price - a.price);
+    console.log("🚀 ~ file: price.ts:103 ~ _asks, _bids:", _asks, _bids)
+    let totalAsk = _asks.reduce((a, b) => a + b.amount, 0);
+    let totalBid = _bids.reduce((a, b) => a + b.amount, 0);
+    let totalBuyUSD = 0;
+    let totalSellUSD = 0;
+    if (totalAsk > totalBid) {
+      totalSellUSD = _bids.reduce((a, b) => a + b.amount * b.price, 0);
+      for (const _ask of _asks) {
+        if (totalBid > _ask.amount) {
+          totalBuyUSD += _ask.amount * _ask.price;
+          totalBid -= _ask.amount;
+        } else {
+          if (totalBid > 0) {
+            totalBuyUSD += totalBid * _ask.price;
+          }
+          break;
+        }
+      }
+      console.log(`Buy ${totalBid} tokens: ${totalBuyUSD} USD, PNL: ${totalSellUSD - totalBuyUSD}, %PL: ${(totalSellUSD - totalBuyUSD) / totalBuyUSD}`);
+      await this.crossExArbiRepository.save({
+        symbol: data.symbol,
+        from_exchange: data.from,
+        to_exchange: data.to,
+        thresh_rate: data.rate,
+        num_token_shoud_buy: totalBid,
+        usd_buy: totalBuyUSD,
+        pnl: totalSellUSD - totalBuyUSD,
+        pnl_percent: (totalSellUSD - totalBuyUSD) / totalBuyUSD,
+        metadata: { top_order: { asks: _asks, bids: _bids } }
+      });
+    } else {
+      totalBuyUSD = _asks.reduce((a, b) => a + b.amount * b.price, 0);
+      for (const _bid of _bids) {
+        if (totalAsk > _bid.amount) {
+          totalSellUSD += _bid.amount * _bid.price;
+          totalAsk -= _bid.amount;
+        } else {
+          if (totalAsk > 0) {
+            totalSellUSD += totalAsk * _bid.price;
+          }
+          break;
+        }
+      }
+      console.log(`Buy ${totalAsk} tokens: ${totalBuyUSD} USD, PNL: ${totalSellUSD - totalBuyUSD}, %PL: ${(totalSellUSD - totalBuyUSD) / totalBuyUSD}`);
+      await this.crossExArbiRepository.save({
+        symbol: data.symbol,
+        from_exchange: data.from,
+        to_exchange: data.to,
+        thresh_rate: data.rate,
+        num_token_shoud_buy: totalAsk,
+        usd_buy: totalBuyUSD,
+        pnl: totalSellUSD - totalBuyUSD,
+        pnl_percent: (totalSellUSD - totalBuyUSD) / totalBuyUSD,
+        metadata: { top_order: { asks: _asks, bids: _bids } }
+      });
+    }
+
+  }
+
+  async snipe(symbol: string) {
+    if (this._price.get('BINGX')?.thresh?.price_ask && this._price.get('MEXC')?.thresh?.price_ask) {
+      const _rateBingToMexc = this._price.get('MEXC').thresh?.price_bid / this._price.get('BINGX').thresh?.price_ask;
+      const _rateMexcToBing = this._price.get('BINGX').thresh?.price_bid / this._price.get('MEXC').thresh?.price_ask;
+      console.log(`🚀 ~ BINGX->MEXC:${_rateBingToMexc} | MEXC->BINGX:${_rateMexcToBing}`);
+      if (_rateBingToMexc > 1) {
+        console.log(`RATE: ${_rateBingToMexc.toFixed(4)} ==> BINGX: ${this._price.get('BINGX').thresh?.price_ask}*${this._price.get('BINGX').thresh?.amount_ask} ---> MEXC: ${this._price.get('MEXC').thresh?.price_bid}*${this._price.get('MEXC').thresh?.amount_bid}`)
+        let _asks = [];
+        let _bids = [];
+        // console.log("🚀 ~ file: price.ts:178 ~ setInterval ~ this._price.get('MEXC').thresh:", this._price.get('BINGX').top_ask, this._price.get('MEXC').thresh, this._price.get('MEXC').thresh?.price_bid, this._price.get('MEXC').top_bid, this._price.get('BINGX').thresh?.price_ask)
+        for (const _ask of this._price.get('BINGX').top_ask) {
+          if (_ask.price < this._price.get('MEXC').thresh?.price_bid) {
+            _asks.push(_ask);
+          }
+        }
+        for (const _bid of this._price.get('MEXC').top_bid) {
+          if (_bid.price > this._price.get('BINGX').thresh?.price_ask) {
+            _bids.push(_bid);
+          }
+        }
+        await this.calculatePNL({ _asks, _bids, from: 'BINGX', to: 'MEXC', rate: _rateBingToMexc, symbol });
+      }
+      if (_rateMexcToBing > 1) {
+        console.log(`RATE: ${_rateMexcToBing.toFixed(4)} ==> MEXC: ${this._price.get('MEXC').thresh?.price_ask}*${this._price.get('MEXC').thresh?.amount_ask} ---> BINGX: ${this._price.get('BINGX').thresh?.price_bid}*${this._price.get('BINGX').thresh?.amount_bid}`)
+        let _asks = [];
+        let _bids = [];
+        // console.log("🚀 ~ file: price.ts:196 ~ setInterval ~ this._price.get('MEXC').top_ask:", this._price.get('MEXC').top_ask, this._price.get('BINGX').thresh?.price_bid, this._price.get('BINGX').top_bid, this._price.get('MEXC').thresh?.price_ask)
+        for (const _ask of this._price.get('MEXC').top_ask) {
+          if (_ask.price < this._price.get('BINGX').thresh?.price_bid) {
+            _asks.push(_ask);
+          }
+        }
+        for (const _bid of this._price.get('BINGX').top_bid) {
+          if (_bid.price > this._price.get('MEXC').thresh?.price_ask) {
+            _bids.push(_bid);
+          }
+        }
+        await this.calculatePNL({ _asks, _bids, from: 'MEXC', to: 'BINGX', rate: _rateMexcToBing, symbol });
+      }
+    }
+  }
+}
