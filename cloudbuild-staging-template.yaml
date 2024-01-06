@@ -1,0 +1,29 @@
+steps:
+    - name: "gcr.io/cloud-builders/gcloud"
+      id: create-instance-template
+      args:
+          - compute
+          - instance-templates
+          - create-with-container
+          - x1000-exchange-stag-template-$_ENV-$SHORT_SHA
+          - --custom-cpu=1
+          - --custom-memory=4GB
+          - --boot-disk-size=20GB
+          - --region=us-central1
+          - --subnet=default
+          - --tags=allow-hc-and-proxy,allow-ssh
+          - --container-image
+          - gcr.io/${PROJECT_ID}/x1000-exchange-stag:latest
+          # # create the managed instance group
+    - name: "gcr.io/cloud-builders/gcloud"
+      entrypoint: "bash"
+      args: [
+              "-c",
+              "gcloud compute instance-groups managed create
+              x1000-exchange-stag-mig --template
+              x1000-exchange-stag-template-$_ENV-$SHORT_SHA --size 1 --region
+              us-central1",
+          ]
+
+options:
+    logging: CLOUD_LOGGING_ONLY

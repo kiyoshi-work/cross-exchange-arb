@@ -4,10 +4,12 @@ import { ConfigModule } from '@nestjs/config';
 import { ArbitrageDemoService } from './services/arbitrage-demo.service';
 import { ScheduleModule } from '@nestjs/schedule';
 import { ArbitrageDemoController } from './controllers/arbitrage-demo.controller';
+import { TelegramBotModule } from '@/telegram-bot';
 
 @Module({
   imports: [
     DatabaseModule,
+    TelegramBotModule,
     ScheduleModule.forRoot(),
     ConfigModule.forRoot({
       isGlobal: true,

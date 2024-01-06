@@ -1,9 +1,13 @@
-import { Injectable, OnApplicationBootstrap } from '@nestjs/common';
+import { Inject, Injectable, OnApplicationBootstrap } from '@nestjs/common';
 import { UserRepository } from '@/database/repositories';
 import { CrossExArbiRepository } from '@/database/repositories/cross-ex-arbi.repository';
+import { TelegramBot } from '@/telegram-bot/telegram-bot';
 
 @Injectable()
 export class ArbitrageDemoService implements OnApplicationBootstrap {
+  @Inject(TelegramBot)
+  private readonly bot: TelegramBot;
+
   constructor(
     private readonly crossExArbiRepository: CrossExArbiRepository,
   ) {
@@ -19,6 +23,7 @@ export class ArbitrageDemoService implements OnApplicationBootstrap {
     top_ask: { amount: number; price: number }[],
     top_bid: { amount: number; price: number }[],
   }>();
+  private _alertTime = new Map<string, number>();
 
   async adaptTrading(data: any) {
     this._price.set(data.exchange, data);
@@ -57,18 +62,26 @@ export class ArbitrageDemoService implements OnApplicationBootstrap {
           break;
         }
       }
-      console.log(`Buy ${totalBid} tokens: ${totalBuyUSD} USD, PNL: ${totalSellUSD - totalBuyUSD}, %PL: ${(totalSellUSD - totalBuyUSD) / totalBuyUSD}`);
-      await this.crossExArbiRepository.save({
-        symbol: data.symbol,
-        from_exchange: data.from,
-        to_exchange: data.to,
-        thresh_rate: data.rate,
-        num_token_shoud_buy: totalBid,
-        usd_buy: totalBuyUSD,
-        pnl: totalSellUSD - totalBuyUSD,
-        pnl_percent: (totalSellUSD - totalBuyUSD) / totalBuyUSD,
-        metadata: { top_order: { asks: _asks, bids: _bids } }
-      });
+      if (totalSellUSD - totalBuyUSD >= 10) {
+        if ((this._alertTime.get(data.symbol) || 0) + 60 * 1000 < Date.now()) {
+          const text = `Buy ${totalBid} tokens ${data.symbol}: ${totalBuyUSD} USD, PNL: ${totalSellUSD - totalBuyUSD}, %PL: ${(totalSellUSD - totalBuyUSD) / totalBuyUSD}`;
+          this._alertTime.set(data.symbol, Date.now());
+          console.log(text);
+          await this.bot.sendArbiAlert(`${text}\n======\nASKS: ${JSON.stringify(_asks)} \nBIDS: ${JSON.stringify(_bids)}`);
+        }
+        await this.crossExArbiRepository.save({
+          symbol: data.symbol,
+          from_exchange: data.from,
+          to_exchange: data.to,
+          thresh_rate: data.rate,
+          num_token_shoud_buy: totalBid,
+          usd_buy: totalBuyUSD,
+          pnl: totalSellUSD - totalBuyUSD,
+          pnl_percent: (totalSellUSD - totalBuyUSD) / totalBuyUSD,
+          metadata: { top_order: { asks: _asks, bids: _bids } }
+        });
+
+      }
     } else {
       totalBuyUSD = _asks.reduce((a, b) => a + b.amount * b.price, 0);
       for (const _bid of _bids) {
@@ -82,18 +95,25 @@ export class ArbitrageDemoService implements OnApplicationBootstrap {
           break;
         }
       }
-      console.log(`Buy ${totalAsk} tokens: ${totalBuyUSD} USD, PNL: ${totalSellUSD - totalBuyUSD}, %PL: ${(totalSellUSD - totalBuyUSD) / totalBuyUSD}`);
-      await this.crossExArbiRepository.save({
-        symbol: data.symbol,
-        from_exchange: data.from,
-        to_exchange: data.to,
-        thresh_rate: data.rate,
-        num_token_shoud_buy: totalAsk,
-        usd_buy: totalBuyUSD,
-        pnl: totalSellUSD - totalBuyUSD,
-        pnl_percent: (totalSellUSD - totalBuyUSD) / totalBuyUSD,
-        metadata: { top_order: { asks: _asks, bids: _bids } }
-      });
+      if (totalSellUSD - totalBuyUSD >= 10) {
+        if ((this._alertTime.get(data.symbol) || 0) + 60 * 1000 < Date.now()) {
+          const text = `Buy ${totalAsk} tokens ${data.symbol}: ${totalBuyUSD} USD, PNL: ${totalSellUSD - totalBuyUSD}, %PL: ${(totalSellUSD - totalBuyUSD) / totalBuyUSD}`;
+          this._alertTime.set(data.symbol, Date.now());
+          console.log(text);
+          await this.bot.sendArbiAlert(`${text}\n======\nASKS: ${JSON.stringify(_asks)} \nBIDS: ${JSON.stringify(_bids)}`);
+        }
+        await this.crossExArbiRepository.save({
+          symbol: data.symbol,
+          from_exchange: data.from,
+          to_exchange: data.to,
+          thresh_rate: data.rate,
+          num_token_shoud_buy: totalAsk,
+          usd_buy: totalBuyUSD,
+          pnl: totalSellUSD - totalBuyUSD,
+          pnl_percent: (totalSellUSD - totalBuyUSD) / totalBuyUSD,
+          metadata: { top_order: { asks: _asks, bids: _bids } }
+        });
+      }
     }
 
   }
