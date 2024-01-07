@@ -64,10 +64,10 @@ export class ArbitrageDemoService implements OnApplicationBootstrap {
       }
       if (totalSellUSD - totalBuyUSD >= 10) {
         if ((this._alertTime.get(data.symbol) || 0) + 60 * 1000 < Date.now()) {
-          const text = `Buy ${totalBid} tokens ${data.symbol}: ${totalBuyUSD} USD, PNL: ${totalSellUSD - totalBuyUSD}, %PL: ${(totalSellUSD - totalBuyUSD) / totalBuyUSD}`;
+          const text = `Buy ${totalBid} tokens ${data.symbol}: ${totalBuyUSD} USD,\nPNL: ${totalSellUSD - totalBuyUSD},\n%PL: ${(totalSellUSD - totalBuyUSD) / totalBuyUSD}`;
           this._alertTime.set(data.symbol, Date.now());
           console.log(text);
-          await this.bot.sendArbiAlert(`${text}\n======\nASKS: ${JSON.stringify(_asks)} \nBIDS: ${JSON.stringify(_bids)}`);
+          await this.bot.sendArbiAlert(`${text}\n======\nASKS (${data.from}): ${JSON.stringify(_asks)} \nBIDS (${data.to}): ${JSON.stringify(_bids)}`);
         }
         await this.crossExArbiRepository.save({
           symbol: data.symbol,
@@ -97,10 +97,10 @@ export class ArbitrageDemoService implements OnApplicationBootstrap {
       }
       if (totalSellUSD - totalBuyUSD >= 10) {
         if ((this._alertTime.get(data.symbol) || 0) + 60 * 1000 < Date.now()) {
-          const text = `Buy ${totalAsk} tokens ${data.symbol}: ${totalBuyUSD} USD, PNL: ${totalSellUSD - totalBuyUSD}, %PL: ${(totalSellUSD - totalBuyUSD) / totalBuyUSD}`;
+          const text = `Buy ${totalAsk} tokens ${data.symbol}: ${totalBuyUSD} USD,\nPNL: ${totalSellUSD - totalBuyUSD},\n%PL: ${(totalSellUSD - totalBuyUSD) / totalBuyUSD}`;
           this._alertTime.set(data.symbol, Date.now());
           console.log(text);
-          await this.bot.sendArbiAlert(`${text}\n======\nASKS: ${JSON.stringify(_asks)} \nBIDS: ${JSON.stringify(_bids)}`);
+          await this.bot.sendArbiAlert(`${text}\n======\nASKS (${data.from}): ${JSON.stringify(_asks)} \nBIDS (${data.to}): ${JSON.stringify(_bids)}`);
         }
         await this.crossExArbiRepository.save({
           symbol: data.symbol,

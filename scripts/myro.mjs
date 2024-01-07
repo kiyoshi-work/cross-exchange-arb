@@ -91,7 +91,7 @@ async function onMessageBingX(message) {
     if (asks && asks.length && bids && bids.length) {
       const lastAsk = asks[asks.length - 1];
       const firstBid = bids[0];
-      // console.log(`BINGX: BAN ${lastAsk.price} : ${lastAsk.amount} ----- MUA: ${firstBid.price} : ${firstBid.amount}`);
+      console.log(`BINGX: BAN ${lastAsk.price} : ${lastAsk.amount} ----- MUA: ${firstBid.price} : ${firstBid.amount}`);
       const options = {
         method: 'POST',
         url: `${_baseUrl}/arbitrage-demo`,
