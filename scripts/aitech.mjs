@@ -10,7 +10,7 @@ function onOpenBingX() {
   console.log("WebSocket connected");
   socketBingX.send(JSON.stringify(
     {
-      "dataType": "spot.depth2.MYRO_USDT.0.00001",
+      "dataType": "spot.depth2.AITECH_USDT.0.00001",
       "data": {
         "depth": 5,
         "aggPrecision": "0.00001"
@@ -27,7 +27,7 @@ function onOpenMEXC() {
     {
       "method": "SUBSCRIPTION",
       "params": [
-        "spot@public.limit.depth.v3.api@MYROUSDT@5"
+        "spot@public.limit.depth.v3.api@AITECHUSDT@5"
       ]
     }
   ));

@@ -62,7 +62,7 @@ export class ArbitrageDemoService implements OnApplicationBootstrap {
           break;
         }
       }
-      if (totalSellUSD - totalBuyUSD >= 10) {
+      if (totalSellUSD - totalBuyUSD >= 0) {
         if ((this._alertTime.get(data.symbol) || 0) + 60 * 1000 < Date.now()) {
           const text = `Buy ${totalBid} tokens ${data.symbol}: ${totalBuyUSD} USD,\nPNL: ${totalSellUSD - totalBuyUSD},\n%PL: ${(totalSellUSD - totalBuyUSD) / totalBuyUSD}`;
           this._alertTime.set(data.symbol, Date.now());
@@ -95,7 +95,7 @@ export class ArbitrageDemoService implements OnApplicationBootstrap {
           break;
         }
       }
-      if (totalSellUSD - totalBuyUSD >= 10) {
+      if (totalSellUSD - totalBuyUSD >= 0) {
         if ((this._alertTime.get(data.symbol) || 0) + 60 * 1000 < Date.now()) {
           const text = `Buy ${totalAsk} tokens ${data.symbol}: ${totalBuyUSD} USD,\nPNL: ${totalSellUSD - totalBuyUSD},\n%PL: ${(totalSellUSD - totalBuyUSD) / totalBuyUSD}`;
           this._alertTime.set(data.symbol, Date.now());
