@@ -29,7 +29,7 @@ steps:
           - compute
           - instance-templates
           - create-with-container
-          - x1000-exchange-stag-t-v1-$_ENV-$BUILD_ID
+          - x1000-exchange-stag-t-v1-$_ENV-$SHORT_SHA
           - --custom-cpu=1
           - --custom-memory=4GB
           - --boot-disk-size=20GB
@@ -44,7 +44,7 @@ steps:
               "-c",
               "gcloud compute instance-groups managed rolling-action
               start-update x1000-exchange-stag-mig
-              --version=template=x1000-exchange-stag-t-v1-$_ENV-$BUILD_ID
+              --version=template=x1000-exchange-stag-t-v1-$_ENV-$SHORT_SHA
               --region=us-central1 --max-unavailable=0",
           ]
 
