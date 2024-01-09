@@ -33,7 +33,19 @@ export class ArbitrageDemoService implements OnApplicationBootstrap {
   private _alertTime = new Map<string, number>();
 
   async adaptTrading(data: any) {
-    if (!this._price[data.exchange]) {
+    if (!this._price || this._price[data.exchange]) {
+      this._price = {
+        'MEXC': new Map<string, {
+          thresh: { amount_bid: number, price_bid: number, amount_ask: number, price_ask: number, updated_at: Date },
+          top_ask: { amount: number; price: number }[],
+          top_bid: { amount: number; price: number }[],
+        }>(),
+        'BINGX': new Map<string, {
+          thresh: { amount_bid: number, price_bid: number, amount_ask: number, price_ask: number, updated_at: Date },
+          top_ask: { amount: number; price: number }[],
+          top_bid: { amount: number; price: number }[],
+        }>()
+      };
       this._price[data.exchange] = new Map<string, {
         thresh: { amount_bid: number, price_bid: number, amount_ask: number, price_ask: number, updated_at: Date },
         top_ask: { amount: number; price: number }[],
