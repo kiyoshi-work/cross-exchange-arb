@@ -140,7 +140,7 @@ export class ArbitrageDemoService implements OnApplicationBootstrap {
   }
 
   async snipe(symbol: string) {
-    if (this._price['MEXC']?.get(symbol)?.thresh?.price_ask && this._price['MEXC']?.get(symbol)?.thresh?.price_ask) {
+    if (this._price['MEXC']?.get(symbol)?.thresh?.price_ask && this._price['BINGX']?.get(symbol)?.thresh?.price_ask) {
       const _rateBingToMexc = this._price['MEXC'].get(symbol).thresh?.price_bid / this._price['BINGX'].get(symbol).thresh?.price_ask;
       const _rateMexcToBing = this._price['BINGX'].get(symbol).thresh?.price_bid / this._price['MEXC'].get(symbol).thresh?.price_ask;
       console.log(`🚀 ~ BINGX->MEXC:${_rateBingToMexc} | MEXC->BINGX:${_rateMexcToBing}`);
