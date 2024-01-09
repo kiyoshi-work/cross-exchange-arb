@@ -18,15 +18,22 @@ export class ArbitrageDemoService implements OnApplicationBootstrap {
     // this.run();
   }
 
-  private _price = new Map<string, {
-    thresh: { amount_bid: number, price_bid: number, amount_ask: number, price_ask: number, updated_at: Date },
-    top_ask: { amount: number; price: number }[],
-    top_bid: { amount: number; price: number }[],
-  }>();
+  private _price = {
+    'MEXC': new Map<string, {
+      thresh: { amount_bid: number, price_bid: number, amount_ask: number, price_ask: number, updated_at: Date },
+      top_ask: { amount: number; price: number }[],
+      top_bid: { amount: number; price: number }[],
+    }>(),
+    'BINGX': new Map<string, {
+      thresh: { amount_bid: number, price_bid: number, amount_ask: number, price_ask: number, updated_at: Date },
+      top_ask: { amount: number; price: number }[],
+      top_bid: { amount: number; price: number }[],
+    }>()
+  };
   private _alertTime = new Map<string, number>();
 
   async adaptTrading(data: any) {
-    this._price.set(data.exchange, data);
+    this._price[data.exchange].set(data.symbol, data);
     await this.snipe(data.symbol);
   }
 
@@ -119,39 +126,39 @@ export class ArbitrageDemoService implements OnApplicationBootstrap {
   }
 
   async snipe(symbol: string) {
-    if (this._price.get('BINGX')?.thresh?.price_ask && this._price.get('MEXC')?.thresh?.price_ask) {
-      const _rateBingToMexc = this._price.get('MEXC').thresh?.price_bid / this._price.get('BINGX').thresh?.price_ask;
-      const _rateMexcToBing = this._price.get('BINGX').thresh?.price_bid / this._price.get('MEXC').thresh?.price_ask;
+    if (this._price['MEXC'].get(symbol)?.thresh?.price_ask && this._price['MEXC'].get(symbol)?.thresh?.price_ask) {
+      const _rateBingToMexc = this._price['MEXC'].get(symbol).thresh?.price_bid / this._price['BINGX'].get(symbol).thresh?.price_ask;
+      const _rateMexcToBing = this._price['BINGX'].get(symbol).thresh?.price_bid / this._price['MEXC'].get(symbol).thresh?.price_ask;
       console.log(`🚀 ~ BINGX->MEXC:${_rateBingToMexc} | MEXC->BINGX:${_rateMexcToBing}`);
       if (_rateBingToMexc > 1) {
-        console.log(`RATE: ${_rateBingToMexc.toFixed(4)} ==> BINGX: ${this._price.get('BINGX').thresh?.price_ask}*${this._price.get('BINGX').thresh?.amount_ask} ---> MEXC: ${this._price.get('MEXC').thresh?.price_bid}*${this._price.get('MEXC').thresh?.amount_bid}`)
+        console.log(`RATE: ${_rateBingToMexc.toFixed(4)} ==> BINGX: ${this._price['BINGX'].get(symbol).thresh?.price_ask}*${this._price['BINGX'].get(symbol).thresh?.amount_ask} ---> MEXC: ${this._price['MEXC'].get(symbol).thresh?.price_bid}*${this._price['MEXC'].get(symbol).thresh?.amount_bid}`)
         let _asks = [];
         let _bids = [];
-        // console.log("🚀 ~ file: price.ts:178 ~ setInterval ~ this._price.get('MEXC').thresh:", this._price.get('BINGX').top_ask, this._price.get('MEXC').thresh, this._price.get('MEXC').thresh?.price_bid, this._price.get('MEXC').top_bid, this._price.get('BINGX').thresh?.price_ask)
-        for (const _ask of this._price.get('BINGX').top_ask) {
-          if (_ask.price < this._price.get('MEXC').thresh?.price_bid) {
+        // console.log("🚀 ~ file: price.ts:178 ~ setInterval ~ this._price['MEXC'].get(symbol).thresh:", this._price['BINGX'].get(symbol).top_ask, this._price['MEXC'].get(symbol).thresh, this._price['MEXC'].get(symbol).thresh?.price_bid, this._price['MEXC'].get(symbol).top_bid, this._price['BINGX'].get(symbol).thresh?.price_ask)
+        for (const _ask of this._price['BINGX'].get(symbol).top_ask) {
+          if (_ask.price < this._price['MEXC'].get(symbol).thresh?.price_bid) {
             _asks.push(_ask);
           }
         }
-        for (const _bid of this._price.get('MEXC').top_bid) {
-          if (_bid.price > this._price.get('BINGX').thresh?.price_ask) {
+        for (const _bid of this._price['MEXC'].get(symbol).top_bid) {
+          if (_bid.price > this._price['BINGX'].get(symbol).thresh?.price_ask) {
             _bids.push(_bid);
           }
         }
         await this.calculatePNL({ _asks, _bids, from: 'BINGX', to: 'MEXC', rate: _rateBingToMexc, symbol });
       }
       if (_rateMexcToBing > 1) {
-        console.log(`RATE: ${_rateMexcToBing.toFixed(4)} ==> MEXC: ${this._price.get('MEXC').thresh?.price_ask}*${this._price.get('MEXC').thresh?.amount_ask} ---> BINGX: ${this._price.get('BINGX').thresh?.price_bid}*${this._price.get('BINGX').thresh?.amount_bid}`)
+        console.log(`RATE: ${_rateMexcToBing.toFixed(4)} ==> MEXC: ${this._price['MEXC'].get(symbol).thresh?.price_ask}*${this._price['MEXC'].get(symbol).thresh?.amount_ask} ---> BINGX: ${this._price['BINGX'].get(symbol).thresh?.price_bid}*${this._price['BINGX'].get(symbol).thresh?.amount_bid}`)
         let _asks = [];
         let _bids = [];
-        // console.log("🚀 ~ file: price.ts:196 ~ setInterval ~ this._price.get('MEXC').top_ask:", this._price.get('MEXC').top_ask, this._price.get('BINGX').thresh?.price_bid, this._price.get('BINGX').top_bid, this._price.get('MEXC').thresh?.price_ask)
-        for (const _ask of this._price.get('MEXC').top_ask) {
-          if (_ask.price < this._price.get('BINGX').thresh?.price_bid) {
+        // console.log("🚀 ~ file: price.ts:196 ~ setInterval ~ this._price['MEXC'].get(symbol).top_ask:", this._price['MEXC'].get(symbol).top_ask, this._price['BINGX'].get(symbol).thresh?.price_bid, this._price['BINGX'].get(symbol).top_bid, this._price['MEXC'].get(symbol).thresh?.price_ask)
+        for (const _ask of this._price['MEXC'].get(symbol).top_ask) {
+          if (_ask.price < this._price['BINGX'].get(symbol).thresh?.price_bid) {
             _asks.push(_ask);
           }
         }
-        for (const _bid of this._price.get('BINGX').top_bid) {
-          if (_bid.price > this._price.get('MEXC').thresh?.price_ask) {
+        for (const _bid of this._price['BINGX'].get(symbol).top_bid) {
+          if (_bid.price > this._price['MEXC'].get(symbol).thresh?.price_ask) {
             _bids.push(_bid);
           }
         }
