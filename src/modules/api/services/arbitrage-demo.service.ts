@@ -33,20 +33,20 @@ export class ArbitrageDemoService implements OnApplicationBootstrap {
   private _alertTime = new Map<string, number>();
 
   async adaptTrading(data: any) {
-    if (!this._price) {
-      this._price = {
-        'MEXC': new Map<string, {
-          thresh: { amount_bid: number, price_bid: number, amount_ask: number, price_ask: number, updated_at: Date },
-          top_ask: { amount: number; price: number }[],
-          top_bid: { amount: number; price: number }[],
-        }>(),
-        'BINGX': new Map<string, {
-          thresh: { amount_bid: number, price_bid: number, amount_ask: number, price_ask: number, updated_at: Date },
-          top_ask: { amount: number; price: number }[],
-          top_bid: { amount: number; price: number }[],
-        }>()
-      };
-    }
+    // if (!this._price) {
+    //   this._price = {
+    //     'MEXC': new Map<string, {
+    //       thresh: { amount_bid: number, price_bid: number, amount_ask: number, price_ask: number, updated_at: Date },
+    //       top_ask: { amount: number; price: number }[],
+    //       top_bid: { amount: number; price: number }[],
+    //     }>(),
+    //     'BINGX': new Map<string, {
+    //       thresh: { amount_bid: number, price_bid: number, amount_ask: number, price_ask: number, updated_at: Date },
+    //       top_ask: { amount: number; price: number }[],
+    //       top_bid: { amount: number; price: number }[],
+    //     }>()
+    //   };
+    // }
     this._price[data.exchange].set(data.symbol, data);
     await this.snipe(data.symbol);
   }
@@ -140,7 +140,7 @@ export class ArbitrageDemoService implements OnApplicationBootstrap {
   }
 
   async snipe(symbol: string) {
-    if (this._price['MEXC'].get(symbol)?.thresh?.price_ask && this._price['MEXC'].get(symbol)?.thresh?.price_ask) {
+    if (this._price['MEXC']?.get(symbol)?.thresh?.price_ask && this._price['MEXC']?.get(symbol)?.thresh?.price_ask) {
       const _rateBingToMexc = this._price['MEXC'].get(symbol).thresh?.price_bid / this._price['BINGX'].get(symbol).thresh?.price_ask;
       const _rateMexcToBing = this._price['BINGX'].get(symbol).thresh?.price_bid / this._price['MEXC'].get(symbol).thresh?.price_ask;
       console.log(`🚀 ~ BINGX->MEXC:${_rateBingToMexc} | MEXC->BINGX:${_rateMexcToBing}`);
