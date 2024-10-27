@@ -29,7 +29,7 @@ steps:
           - compute
           - instance-templates
           - create-with-container
-          - x1000-exchange-stag-t-v1-$_ENV-$BUILD_ID
+          - x1000-exchange-stag-t-v1-$_ENV-$SHORT_SHA
           - --custom-cpu=1
           - --custom-memory=4GB
           - --boot-disk-size=20GB
@@ -44,19 +44,19 @@ steps:
               "-c",
               "gcloud compute instance-groups managed rolling-action
               start-update x1000-exchange-stag-mig
-              --version=template=x1000-exchange-stag-t-v1-$_ENV-$BUILD_ID
+              --version=template=x1000-exchange-stag-t-v1-$_ENV-$SHORT_SHA
               --region=us-central1 --max-unavailable=0",
           ]
 
 availableSecrets:
     secretManager:
-        - versionName: projects/${PROJECT_ID}/secrets/SOCIAL_FI_DB_HOST/versions/latest
+        - versionName: projects/${PROJECT_ID}/secrets/DB_HOST/versions/latest
           env: DB_HOST
-        - versionName: projects/${PROJECT_ID}/secrets/SOCIAL_FI_DB_PORT/versions/latest
+        - versionName: projects/${PROJECT_ID}/secrets/DB_PORT/versions/latest
           env: DB_PORT
-        - versionName: projects/${PROJECT_ID}/secrets/SOCIAL_FI_DB_USERNAME/versions/latest
+        - versionName: projects/${PROJECT_ID}/secrets/DB_USERNAME/versions/latest
           env: DB_USERNAME
-        - versionName: projects/${PROJECT_ID}/secrets/SOCIAL_FI_DB_PASSWORD/versions/latest
+        - versionName: projects/${PROJECT_ID}/secrets/DB_PASSWORD/versions/latest
           env: DB_PASSWORD
         - versionName: projects/${PROJECT_ID}/secrets/X1000_EXCHANGE_DB_DATABASE/versions/latest
           env: DB_DATABASE

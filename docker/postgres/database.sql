@@ -1,1 +1,0 @@
-CREATE DATABASE cross_exchange_analytics;
