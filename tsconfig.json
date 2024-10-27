@@ -32,12 +32,6 @@
       "@/api/*": [
         "modules/api/*"
       ],
-      "@/telegram-bot": [
-        "modules/telegram-bot/index"
-      ],
-      "@/telegram-bot/*": [
-        "modules/telegram-bot/*"
-      ],
       "@/shared/*": [
         "shared/*"
       ]

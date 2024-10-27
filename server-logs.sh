@@ -1,1 +1,0 @@
-docker logs -f --tail 2000 cross-exchange-analytics-dev

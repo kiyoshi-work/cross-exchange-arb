@@ -5,6 +5,7 @@ import axios from 'axios';
 let socketBingX;
 let socketMEXC;
 const _baseUrl = `http://localhost:${process.env.PORT || 8011}`;
+console.log(process.env.PORT);
 
 function onOpenBingX() {
   console.log("WebSocket connected");
